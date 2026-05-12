@@ -1,0 +1,1407 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GameMind — Tu Agente Recomendador de Videojuegos</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0a0f;
+    --bg2: #111118;
+    --bg3: #18181f;
+    --bg4: #202028;
+    --border: rgba(255,255,255,0.08);
+    --border2: rgba(255,255,255,0.14);
+    --accent: #7c6dfa;
+    --accent2: #a78bfa;
+    --accent3: #c4b5fd;
+    --gold: #f59e0b;
+    --teal: #14b8a6;
+    --coral: #f97316;
+    --pink: #ec4899;
+    --green: #22c55e;
+    --text: #f1f0ff;
+    --text2: #a09ec0;
+    --text3: #6b6888;
+    --radius: 12px;
+    --radius-lg: 20px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 16px;
+    line-height: 1.6;
+    min-height: 100vh;
+  }
+
+  /* ─── BACKGROUND GRID ─── */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(124,109,250,0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(124,109,250,0.03) 1px, transparent 1px);
+    background-size: 48px 48px;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .container { max-width: 1100px; margin: 0 auto; padding: 0 24px; position: relative; z-index: 1; }
+
+  /* ─── HEADER ─── */
+  header {
+    padding: 80px 0 60px;
+    text-align: center;
+  }
+  .logo-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(124,109,250,0.12);
+    border: 1px solid rgba(124,109,250,0.3);
+    border-radius: 100px;
+    padding: 6px 16px;
+    font-size: 13px;
+    color: var(--accent3);
+    font-weight: 500;
+    letter-spacing: 0.04em;
+    margin-bottom: 28px;
+  }
+  .logo-badge::before { content: '◆'; font-size: 10px; }
+  h1 {
+    font-family: 'Syne', sans-serif;
+    font-size: clamp(42px, 7vw, 76px);
+    font-weight: 800;
+    line-height: 1.0;
+    letter-spacing: -0.02em;
+    background: linear-gradient(135deg, #fff 0%, var(--accent3) 50%, var(--accent) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin-bottom: 20px;
+  }
+  .subtitle {
+    font-size: 18px;
+    color: var(--text2);
+    max-width: 560px;
+    margin: 0 auto;
+    font-weight: 300;
+    line-height: 1.7;
+  }
+  .subtitle strong { color: var(--text); font-weight: 500; }
+
+  /* ─── STEPS INDICATOR ─── */
+  .steps-bar {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0;
+    margin: 60px 0 48px;
+  }
+  .step-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .step-dot {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    border: 1.5px solid var(--border2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Syne', sans-serif;
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--text3);
+    transition: all 0.3s;
+    background: var(--bg2);
+  }
+  .step-dot.active {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: white;
+    box-shadow: 0 0 20px rgba(124,109,250,0.4);
+  }
+  .step-dot.done {
+    background: rgba(124,109,250,0.2);
+    border-color: var(--accent);
+    color: var(--accent3);
+  }
+  .step-line {
+    width: 60px;
+    height: 1px;
+    background: var(--border2);
+    margin: 0 4px;
+  }
+  .step-line.done { background: var(--accent); }
+  .step-label {
+    font-size: 12px;
+    color: var(--text3);
+    margin-left: 4px;
+    display: none;
+  }
+  @media (min-width: 600px) { .step-label { display: block; } }
+
+  /* ─── FORM CARD ─── */
+  .form-card {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 40px;
+    margin-bottom: 32px;
+  }
+  @media (max-width: 600px) { .form-card { padding: 24px 20px; } }
+
+  .form-section {
+    display: none;
+  }
+  .form-section.active { display: block; }
+
+  .section-header {
+    display: flex;
+    align-items: flex-start;
+    gap: 16px;
+    margin-bottom: 32px;
+  }
+  .section-num {
+    font-family: 'Syne', sans-serif;
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--accent);
+    background: rgba(124,109,250,0.12);
+    border: 1px solid rgba(124,109,250,0.25);
+    border-radius: 6px;
+    padding: 4px 10px;
+    letter-spacing: 0.08em;
+    white-space: nowrap;
+    margin-top: 3px;
+  }
+  .section-title {
+    font-family: 'Syne', sans-serif;
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--text);
+    line-height: 1.2;
+    margin-bottom: 6px;
+  }
+  .section-desc { font-size: 14px; color: var(--text2); }
+
+  /* ─── OPTION GRID ─── */
+  .options-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 12px;
+  }
+  @media (max-width: 500px) { .options-grid { grid-template-columns: 1fr 1fr; } }
+
+  .option-btn {
+    position: relative;
+    background: var(--bg3);
+    border: 1.5px solid var(--border);
+    border-radius: var(--radius);
+    padding: 16px 14px;
+    cursor: pointer;
+    transition: all 0.2s;
+    text-align: left;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+  .option-btn:hover {
+    border-color: var(--border2);
+    background: var(--bg4);
+    transform: translateY(-1px);
+  }
+  .option-btn.selected {
+    border-color: var(--accent);
+    background: rgba(124,109,250,0.1);
+  }
+  .option-btn.selected::after {
+    content: '✓';
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    width: 18px;
+    height: 18px;
+    background: var(--accent);
+    border-radius: 50%;
+    font-size: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-weight: 700;
+  }
+  .opt-icon { font-size: 22px; line-height: 1; }
+  .opt-name {
+    font-family: 'Syne', sans-serif;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text);
+    line-height: 1.3;
+  }
+  .opt-desc { font-size: 11px; color: var(--text3); line-height: 1.4; }
+
+  /* ─── NAV BUTTONS ─── */
+  .form-nav {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 36px;
+    gap: 12px;
+  }
+  .btn {
+    font-family: 'Syne', sans-serif;
+    font-size: 14px;
+    font-weight: 700;
+    padding: 12px 28px;
+    border-radius: 100px;
+    border: none;
+    cursor: pointer;
+    transition: all 0.2s;
+    letter-spacing: 0.02em;
+  }
+  .btn-ghost {
+    background: transparent;
+    border: 1.5px solid var(--border2);
+    color: var(--text2);
+  }
+  .btn-ghost:hover { border-color: var(--text2); color: var(--text); }
+  .btn-primary {
+    background: var(--accent);
+    color: white;
+    box-shadow: 0 4px 20px rgba(124,109,250,0.35);
+  }
+  .btn-primary:hover {
+    background: var(--accent2);
+    transform: translateY(-1px);
+    box-shadow: 0 6px 28px rgba(124,109,250,0.45);
+  }
+  .btn-primary:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+  .btn-cta {
+    background: linear-gradient(135deg, var(--accent), #9b5de5);
+    color: white;
+    font-size: 16px;
+    padding: 16px 40px;
+    box-shadow: 0 6px 30px rgba(124,109,250,0.4);
+  }
+  .btn-cta:hover { transform: translateY(-2px); box-shadow: 0 10px 40px rgba(124,109,250,0.5); }
+
+  /* ─── PROGRESS BAR ─── */
+  .progress-bar {
+    height: 3px;
+    background: var(--border);
+    border-radius: 100px;
+    margin-bottom: 8px;
+    overflow: hidden;
+  }
+  .progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--accent), var(--accent2));
+    border-radius: 100px;
+    transition: width 0.4s ease;
+  }
+  .progress-label { font-size: 12px; color: var(--text3); text-align: right; margin-bottom: 32px; }
+
+  /* ─── LOADING ─── */
+  #loading {
+    display: none;
+    text-align: center;
+    padding: 80px 40px;
+  }
+  .loader-ring {
+    width: 64px;
+    height: 64px;
+    border-radius: 50%;
+    border: 3px solid var(--border);
+    border-top-color: var(--accent);
+    animation: spin 0.8s linear infinite;
+    margin: 0 auto 24px;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .loader-text {
+    font-family: 'Syne', sans-serif;
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--text);
+    margin-bottom: 8px;
+  }
+  .loader-sub { font-size: 14px; color: var(--text3); }
+  .loader-dots::after {
+    content: '';
+    animation: dots 1.5s steps(4, end) infinite;
+  }
+  @keyframes dots {
+    0%,20%{content:''} 40%{content:'.'} 60%{content:'..'} 80%,100%{content:'...'}
+  }
+
+  /* ─── RESULTS ─── */
+  #results { display: none; }
+
+  .results-header {
+    text-align: center;
+    padding: 60px 0 48px;
+  }
+  .results-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(34,197,94,0.1);
+    border: 1px solid rgba(34,197,94,0.3);
+    border-radius: 100px;
+    padding: 6px 16px;
+    font-size: 13px;
+    color: #86efac;
+    margin-bottom: 20px;
+  }
+  .results-title {
+    font-family: 'Syne', sans-serif;
+    font-size: clamp(30px, 5vw, 52px);
+    font-weight: 800;
+    line-height: 1.1;
+    margin-bottom: 12px;
+  }
+  .results-subtitle { font-size: 16px; color: var(--text2); }
+
+  /* ─── PROFILE CHIPS ─── */
+  .profile-chips {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 8px;
+    margin: 24px 0 48px;
+  }
+  .chip {
+    background: var(--bg3);
+    border: 1px solid var(--border2);
+    border-radius: 100px;
+    padding: 6px 14px;
+    font-size: 13px;
+    color: var(--text2);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .chip-icon { font-size: 14px; }
+
+  /* ─── CATEGORY TABS ─── */
+  .category-tabs {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 32px;
+    overflow-x: auto;
+    padding-bottom: 4px;
+    scrollbar-width: none;
+  }
+  .category-tabs::-webkit-scrollbar { display: none; }
+  .tab-btn {
+    font-family: 'Syne', sans-serif;
+    font-size: 13px;
+    font-weight: 600;
+    padding: 10px 20px;
+    border-radius: 100px;
+    border: 1.5px solid var(--border);
+    background: var(--bg2);
+    color: var(--text2);
+    cursor: pointer;
+    white-space: nowrap;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .tab-btn:hover { border-color: var(--border2); color: var(--text); }
+  .tab-btn.active {
+    color: white;
+    border-color: transparent;
+  }
+  .tab-btn .count {
+    font-size: 11px;
+    padding: 2px 7px;
+    border-radius: 100px;
+    background: rgba(255,255,255,0.15);
+  }
+
+  /* ─── GAMES GRID ─── */
+  .games-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 16px;
+  }
+  @media (max-width: 500px) { .games-grid { grid-template-columns: 1fr; } }
+
+  .game-card {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 20px;
+    transition: all 0.2s;
+    animation: fadeUp 0.4s ease both;
+  }
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(16px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  .game-card:hover {
+    border-color: var(--border2);
+    transform: translateY(-2px);
+  }
+  .game-top {
+    display: flex;
+    align-items: flex-start;
+    gap: 14px;
+    margin-bottom: 12px;
+  }
+  .game-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+    flex-shrink: 0;
+  }
+  .game-meta { flex: 1; min-width: 0; }
+  .game-name {
+    font-family: 'Syne', sans-serif;
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--text);
+    margin-bottom: 4px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .game-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+  }
+  .tag {
+    font-size: 10px;
+    padding: 2px 8px;
+    border-radius: 100px;
+    background: var(--bg4);
+    color: var(--text3);
+    border: 1px solid var(--border);
+    white-space: nowrap;
+  }
+  .game-score {
+    font-family: 'Syne', sans-serif;
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--accent);
+    flex-shrink: 0;
+  }
+  .game-reason {
+    font-size: 13px;
+    color: var(--text2);
+    line-height: 1.5;
+    border-top: 1px solid var(--border);
+    padding-top: 12px;
+    font-style: italic;
+  }
+  .game-reason::before { content: '"'; color: var(--accent); font-style: normal; }
+  .game-reason::after { content: '"'; color: var(--accent); font-style: normal; }
+
+  /* ─── MATCH BADGE ─── */
+  .match-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 11px;
+    padding: 3px 10px;
+    border-radius: 100px;
+    font-weight: 600;
+    font-family: 'Syne', sans-serif;
+    margin-bottom: 8px;
+  }
+  .match-perfect { background: rgba(34,197,94,0.12); color: #86efac; border: 1px solid rgba(34,197,94,0.25); }
+  .match-high { background: rgba(124,109,250,0.12); color: var(--accent3); border: 1px solid rgba(124,109,250,0.25); }
+  .match-medium { background: rgba(245,158,11,0.12); color: #fcd34d; border: 1px solid rgba(245,158,11,0.25); }
+  .match-low { background: rgba(249,115,22,0.12); color: #fdba74; border: 1px solid rgba(249,115,22,0.25); }
+
+  /* ─── SUMMARY BAR ─── */
+  .summary-bar {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: 12px;
+    margin-bottom: 40px;
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 24px;
+  }
+  .stat-item { text-align: center; }
+  .stat-num {
+    font-family: 'Syne', sans-serif;
+    font-size: 32px;
+    font-weight: 800;
+    color: var(--text);
+    line-height: 1;
+    margin-bottom: 4px;
+  }
+  .stat-label { font-size: 12px; color: var(--text3); }
+
+  /* ─── RESET BTN ─── */
+  .reset-section {
+    text-align: center;
+    padding: 48px 0 80px;
+  }
+  .reset-section p { color: var(--text2); font-size: 15px; margin-bottom: 20px; }
+
+  /* ─── FOOTER ─── */
+  footer {
+    border-top: 1px solid var(--border);
+    text-align: center;
+    padding: 32px;
+    color: var(--text3);
+    font-size: 13px;
+    position: relative;
+    z-index: 1;
+  }
+  footer span { color: var(--accent3); }
+
+  /* ─── VALIDATION MSG ─── */
+  .validation-msg {
+    font-size: 13px;
+    color: #f97316;
+    margin-top: 16px;
+    display: none;
+  }
+
+  /* ─── AGENT SCORE PANEL ─── */
+  .agent-panel {
+    background: var(--bg3);
+    border: 1px solid rgba(124,109,250,0.2);
+    border-radius: var(--radius);
+    padding: 16px 20px;
+    margin-bottom: 32px;
+    font-size: 13px;
+    color: var(--text2);
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px 16px;
+  }
+  .agent-panel strong { color: var(--accent3); font-family: 'Syne', sans-serif; font-size: 12px; letter-spacing:0.05em; }
+  .weight-chip {
+    background: var(--bg4);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 3px 10px;
+    font-size: 11px;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+  }
+  .weight-chip span { color: var(--accent); font-weight: 700; font-family: 'Syne', sans-serif; }
+
+  /* ─── FEEDBACK BUTTON ─── */
+  .game-feedback { margin-top: 10px; }
+  .feedback-btn {
+    font-size: 11px;
+    padding: 4px 12px;
+    border-radius: 100px;
+    border: 1px solid var(--border);
+    background: transparent;
+    color: var(--text3);
+    cursor: pointer;
+    transition: all 0.2s;
+    font-family: 'DM Sans', sans-serif;
+  }
+  .feedback-btn:hover { border-color: #f97316; color: #f97316; }
+  .feedback-btn.feedback-active { background: rgba(249,115,22,0.1); border-color: #f97316; color: #f97316; }
+
+  /* ─── DISLIKED GAME CARD ─── */
+  .game-disliked { opacity: 0.45; }
+  .game-disliked:hover { opacity: 0.6; }
+
+  /* ─── FEEDBACK NOTICE ─── */
+  .feedback-notice {
+    display: none;
+    align-items: center;
+    gap: 8px;
+    font-size: 12px;
+    color: #f97316;
+    margin-bottom: 16px;
+    padding: 8px 16px;
+    background: rgba(249,115,22,0.08);
+    border: 1px solid rgba(249,115,22,0.2);
+    border-radius: var(--radius);
+  }
+  .feedback-notice.visible { display: flex; }
+
+  /* ─── HIDDEN ─── */
+  .hidden { display: none !important; }
+</style>
+</head>
+<body>
+
+<!-- ══════════════ HEADER ══════════════ -->
+<header>
+  <div class="container">
+    <div class="logo-badge">AGENTE INTELIGENTE · VERSIÓN 2.0</div>
+    <h1>GameMind</h1>
+    <p class="subtitle">Cuéntame tus gustos y mi algoritmo analizará <strong>más de 50 videojuegos</strong> para crear tu lista personalizada perfecta.</p>
+  </div>
+</header>
+
+<!-- ══════════════ MAIN ══════════════ -->
+<main>
+  <div class="container">
+
+    <!-- FORM SECTION -->
+    <section id="form-section">
+
+      <!-- Steps bar -->
+      <div class="steps-bar" id="steps-bar">
+        <div class="step-item">
+          <div class="step-dot active" id="dot-1">1</div>
+          <span class="step-label" style="color:var(--text2);font-size:12px">Género</span>
+        </div>
+        <div class="step-line" id="line-1"></div>
+        <div class="step-item">
+          <div class="step-dot" id="dot-2">2</div>
+          <span class="step-label" style="color:var(--text2);font-size:12px">Trama</span>
+        </div>
+        <div class="step-line" id="line-2"></div>
+        <div class="step-item">
+          <div class="step-dot" id="dot-3">3</div>
+          <span class="step-label" style="color:var(--text2);font-size:12px">Combate</span>
+        </div>
+        <div class="step-line" id="line-3"></div>
+        <div class="step-item">
+          <div class="step-dot" id="dot-4">4</div>
+          <span class="step-label" style="color:var(--text2);font-size:12px">Visual</span>
+        </div>
+        <div class="step-line" id="line-4"></div>
+        <div class="step-item">
+          <div class="step-dot" id="dot-5">5</div>
+          <span class="step-label" style="color:var(--text2);font-size:12px">Duración</span>
+        </div>
+      </div>
+
+      <!-- Progress -->
+      <div class="progress-bar"><div class="progress-fill" id="progress-fill" style="width:20%"></div></div>
+      <div class="progress-label" id="progress-label">Paso 1 de 5</div>
+
+      <!-- Form Card -->
+      <div class="form-card">
+
+        <!-- STEP 1: GÉNERO -->
+        <div class="form-section active" id="step-1">
+          <div class="section-header">
+            <div class="section-num">01 / 05</div>
+            <div>
+              <div class="section-title">¿Qué género te apasiona?</div>
+              <div class="section-desc">Selecciona tu género favorito de videojuegos</div>
+            </div>
+          </div>
+          <div class="options-grid">
+            <button class="option-btn" data-step="1" data-value="aventura" onclick="selectOption(this)">
+              <span class="opt-icon">🗺️</span>
+              <span class="opt-name">Aventura</span>
+              <span class="opt-desc">Exploración, misterio y descubrimiento</span>
+            </button>
+            <button class="option-btn" data-step="1" data-value="rpg" onclick="selectOption(this)">
+              <span class="opt-icon">⚔️</span>
+              <span class="opt-name">RPG</span>
+              <span class="opt-desc">Desarrollo de personaje y mundo profundo</span>
+            </button>
+            <button class="option-btn" data-step="1" data-value="pelea" onclick="selectOption(this)">
+              <span class="opt-icon">🥊</span>
+              <span class="opt-name">Pelea</span>
+              <span class="opt-desc">Combate directo entre personajes</span>
+            </button>
+            <button class="option-btn" data-step="1" data-value="estrategia" onclick="selectOption(this)">
+              <span class="opt-icon">♟️</span>
+              <span class="opt-name">Estrategia</span>
+              <span class="opt-desc">Planificación táctica y gestión de recursos</span>
+            </button>
+            <button class="option-btn" data-step="1" data-value="simulacion" onclick="selectOption(this)">
+              <span class="opt-icon">🏗️</span>
+              <span class="opt-name">Simulación</span>
+              <span class="opt-desc">Construye y gestiona mundos propios</span>
+            </button>
+            <button class="option-btn" data-step="1" data-value="shooter" onclick="selectOption(this)">
+              <span class="opt-icon">🎯</span>
+              <span class="opt-name">Shooter</span>
+              <span class="opt-desc">Acción con armas en primera o tercera persona</span>
+            </button>
+            <button class="option-btn" data-step="1" data-value="terror" onclick="selectOption(this)">
+              <span class="opt-icon">👻</span>
+              <span class="opt-name">Terror</span>
+              <span class="opt-desc">Suspenso, horror y supervivencia</span>
+            </button>
+          </div>
+          <div class="validation-msg" id="val-1">⚠ Por favor selecciona una opción para continuar</div>
+          <div class="form-nav">
+            <div></div>
+            <button class="btn btn-primary" onclick="nextStep(1)">Siguiente →</button>
+          </div>
+        </div>
+
+        <!-- STEP 2: TRAMA -->
+        <div class="form-section" id="step-2">
+          <div class="section-header">
+            <div class="section-num">02 / 05</div>
+            <div>
+              <div class="section-title">¿Qué tipo de trama prefieres?</div>
+              <div class="section-desc">La estructura narrativa que más disfrutas</div>
+            </div>
+          </div>
+          <div class="options-grid">
+            <button class="option-btn" data-step="2" data-value="lineal" onclick="selectOption(this)">
+              <span class="opt-icon">📖</span>
+              <span class="opt-name">Lineal</span>
+              <span class="opt-desc">Historia cinematográfica con final fijo</span>
+            </button>
+            <button class="option-btn" data-step="2" data-value="ramificada" onclick="selectOption(this)">
+              <span class="opt-icon">🌿</span>
+              <span class="opt-name">Ramificada</span>
+              <span class="opt-desc">Tus decisiones cambian el destino</span>
+            </button>
+            <button class="option-btn" data-step="2" data-value="mundo_abierto" onclick="selectOption(this)">
+              <span class="opt-icon">🌍</span>
+              <span class="opt-name">Mundo Abierto</span>
+              <span class="opt-desc">Libertad total para explorar</span>
+            </button>
+            <button class="option-btn" data-step="2" data-value="narrativa_ligera" onclick="selectOption(this)">
+              <span class="opt-icon">✨</span>
+              <span class="opt-name">Narrativa Ligera</span>
+              <span class="opt-desc">El gameplay es lo importante, la historia es secundaria</span>
+            </button>
+          </div>
+          <div class="validation-msg" id="val-2">⚠ Por favor selecciona una opción para continuar</div>
+          <div class="form-nav">
+            <button class="btn btn-ghost" onclick="prevStep(2)">← Atrás</button>
+            <button class="btn btn-primary" onclick="nextStep(2)">Siguiente →</button>
+          </div>
+        </div>
+
+        <!-- STEP 3: COMBATE -->
+        <div class="form-section" id="step-3">
+          <div class="section-header">
+            <div class="section-num">03 / 05</div>
+            <div>
+              <div class="section-title">¿Tu sistema de combate ideal?</div>
+              <div class="section-desc">¿Cómo te gusta enfrentarte a los enemigos?</div>
+            </div>
+          </div>
+          <div class="options-grid">
+            <button class="option-btn" data-step="3" data-value="por_turnos" onclick="selectOption(this)">
+              <span class="opt-icon">🎲</span>
+              <span class="opt-name">Por Turnos</span>
+              <span class="opt-desc">Estrategia pausada y deliberada</span>
+            </button>
+            <button class="option-btn" data-step="3" data-value="tactico" onclick="selectOption(this)">
+              <span class="opt-icon">🗡️</span>
+              <span class="opt-name">Táctico en Tiempo Real</span>
+              <span class="opt-desc">Acción con pausa y planificación</span>
+            </button>
+            <button class="option-btn" data-step="3" data-value="accion" onclick="selectOption(this)">
+              <span class="opt-icon">⚡</span>
+              <span class="opt-name">Acción Frenética</span>
+              <span class="opt-desc">Combate veloz y espectacular</span>
+            </button>
+            <button class="option-btn" data-step="3" data-value="sin_combate" onclick="selectOption(this)">
+              <span class="opt-icon">🕊️</span>
+              <span class="opt-name">Sin Combate</span>
+              <span class="opt-desc">Exploración, puzzles y narrativa pura</span>
+            </button>
+          </div>
+          <div class="validation-msg" id="val-3">⚠ Por favor selecciona una opción para continuar</div>
+          <div class="form-nav">
+            <button class="btn btn-ghost" onclick="prevStep(3)">← Atrás</button>
+            <button class="btn btn-primary" onclick="nextStep(3)">Siguiente →</button>
+          </div>
+        </div>
+
+        <!-- STEP 4: VISUAL -->
+        <div class="form-section" id="step-4">
+          <div class="section-header">
+            <div class="section-num">04 / 05</div>
+            <div>
+              <div class="section-title">¿Qué estilo visual te enamora?</div>
+              <div class="section-desc">La dirección artística que prefieres</div>
+            </div>
+          </div>
+          <div class="options-grid">
+            <button class="option-btn" data-step="4" data-value="realista" onclick="selectOption(this)">
+              <span class="opt-icon">🎬</span>
+              <span class="opt-name">Realista</span>
+              <span class="opt-desc">Gráficos detallados y atmosféricos</span>
+            </button>
+            <button class="option-btn" data-step="4" data-value="anime" onclick="selectOption(this)">
+              <span class="opt-icon">🌸</span>
+              <span class="opt-name">Anime / Pixel Art</span>
+              <span class="opt-desc">Estética japonesa o retro vibrante</span>
+            </button>
+            <button class="option-btn" data-step="4" data-value="lowpoly" onclick="selectOption(this)">
+              <span class="opt-icon">🔷</span>
+              <span class="opt-name">Low-Poly</span>
+              <span class="opt-desc">Formas geométricas con encanto artístico</span>
+            </button>
+            <button class="option-btn" data-step="4" data-value="fotorrealista" onclick="selectOption(this)">
+              <span class="opt-icon">📸</span>
+              <span class="opt-name">Fotorrealista</span>
+              <span class="opt-desc">Lo más cercano a la realidad posible</span>
+            </button>
+          </div>
+          <div class="validation-msg" id="val-4">⚠ Por favor selecciona una opción para continuar</div>
+          <div class="form-nav">
+            <button class="btn btn-ghost" onclick="prevStep(4)">← Atrás</button>
+            <button class="btn btn-primary" onclick="nextStep(4)">Siguiente →</button>
+          </div>
+        </div>
+
+        <!-- STEP 5: DURACIÓN -->
+        <div class="form-section" id="step-5">
+          <div class="section-header">
+            <div class="section-num">05 / 05</div>
+            <div>
+              <div class="section-title">¿Cuántas horas quieres invertir?</div>
+              <div class="section-desc">La duración ideal para tu próxima experiencia</div>
+            </div>
+          </div>
+          <div class="options-grid">
+            <button class="option-btn" data-step="5" data-value="corto" onclick="selectOption(this)">
+              <span class="opt-icon">⏱️</span>
+              <span class="opt-name">Corto</span>
+              <span class="opt-desc">Menos de 10 horas — experiencia intensa y directa</span>
+            </button>
+            <button class="option-btn" data-step="5" data-value="medio" onclick="selectOption(this)">
+              <span class="opt-icon">⏰</span>
+              <span class="opt-name">Medio</span>
+              <span class="opt-desc">10–30 horas — el punto dulce del gaming</span>
+            </button>
+            <button class="option-btn" data-step="5" data-value="largo" onclick="selectOption(this)">
+              <span class="opt-icon">🗓️</span>
+              <span class="opt-name">Largo</span>
+              <span class="opt-desc">Más de 30 horas — comprometido con el mundo</span>
+            </button>
+          </div>
+          <div class="validation-msg" id="val-5">⚠ Por favor selecciona una opción para continuar</div>
+          <div class="form-nav">
+            <button class="btn btn-ghost" onclick="prevStep(5)">← Atrás</button>
+            <button class="btn btn-cta" onclick="getRecommendations()">🎮 Obtener Recomendaciones</button>
+          </div>
+        </div>
+
+      </div><!-- /form-card -->
+    </section>
+
+    <!-- LOADING -->
+    <div id="loading">
+      <div class="loader-ring"></div>
+      <div class="loader-text">Analizando tu perfil<span class="loader-dots"></span></div>
+      <div class="loader-sub">El agente está comparando tus preferencias con 50+ juegos</div>
+    </div>
+
+    <!-- RESULTS -->
+    <section id="results">
+      <div class="results-header">
+        <div class="results-badge">✦ Análisis completado</div>
+        <h2 class="results-title">Tu lista personalizada</h2>
+        <p class="results-subtitle">Basado en tu perfil único de jugador</p>
+        <div class="profile-chips" id="profile-chips"></div>
+      </div>
+
+      <!-- Agent formula panel -->
+      <div class="agent-panel">
+        <strong>⚙ FUNCIÓN DE UTILIDAD f(s, a)</strong>
+        <div class="weight-chip">🎮 Género <span>25pts</span></div>
+        <div class="weight-chip">📖 Trama <span>20pts</span></div>
+        <div class="weight-chip">⚔️ Combate <span>20pts</span></div>
+        <div class="weight-chip">🎨 Visual <span>18pts</span></div>
+        <div class="weight-chip">⏱️ Duración <span>17pts</span></div>
+        <div style="color:var(--text3);font-size:11px;margin-left:auto">a* = argmax f(s,a) · max: 100pts</div>
+      </div>
+
+      <!-- Feedback notice -->
+      <div class="feedback-notice" id="feedback-notice">
+        ⚡ El agente recalculó las recomendaciones en respuesta a tu feedback — los juegos descartados fueron penalizados.
+      </div>
+
+      <!-- Summary stats -->
+      <div class="summary-bar" id="summary-bar"></div>
+
+      <!-- Tabs -->
+      <div class="category-tabs" id="category-tabs"></div>
+
+      <!-- Games container -->
+      <div id="games-container"></div>
+
+      <!-- Reset -->
+      <div class="reset-section">
+        <p>¿Quieres refinar tus preferencias?</p>
+        <button class="btn btn-ghost" onclick="resetForm()" style="font-size:15px;padding:14px 36px">🔄 Nueva Búsqueda</button>
+      </div>
+    </section>
+
+  </div>
+</main>
+
+<footer>
+  <div>GameMind · Agente Recomendador <span>◆</span> Desarrollado con inteligencia de matching</div>
+</footer>
+
+<!-- ══════════════ JAVASCRIPT ══════════════ -->
+<script>
+// ═══════════════════════════════════════════════
+//  DATABASE — 52 videojuegos con metadatos
+// ═══════════════════════════════════════════════
+const GAMES_DB = [
+  // AVENTURA + varios
+  { id:1, name:"The Legend of Zelda: Breath of the Wild", icon:"🗡️", genre:"aventura", trama:"mundo_abierto", combate:"accion", visual:"lowpoly", duracion:"largo", tags:["Mundo abierto","Exploración","Acción","Nintendo"], pop:98 },
+  { id:2, name:"Hollow Knight", icon:"🦋", genre:"aventura", trama:"lineal", combate:"accion", visual:"anime", duracion:"medio", tags:["Metroidvania","Plataformas","Indie","Difícil"], pop:94 },
+  { id:3, name:"A Short Hike", icon:"🏔️", genre:"aventura", trama:"narrativa_ligera", combate:"sin_combate", visual:"lowpoly", duracion:"corto", tags:["Relajante","Exploración","Casual","Indie"], pop:86 },
+  { id:4, name:"Outer Wilds", icon:"🌌", genre:"aventura", trama:"lineal", combate:"sin_combate", visual:"realista", duracion:"medio", tags:["Misterio","Exploración espacial","Narrativa"], pop:92 },
+  { id:5, name:"Subnautica", icon:"🌊", genre:"aventura", trama:"lineal", combate:"accion", visual:"realista", duracion:"medio", tags:["Supervivencia","Exploración","Crafting","Terror"], pop:91 },
+  { id:6, name:"Journey", icon:"✨", genre:"aventura", trama:"lineal", combate:"sin_combate", visual:"lowpoly", duracion:"corto", tags:["Artístico","Meditativo","Online","Belleza"], pop:90 },
+  { id:7, name:"Ori and the Blind Forest", icon:"🌸", genre:"aventura", trama:"lineal", combate:"accion", visual:"anime", duracion:"corto", tags:["Plataformas","Emotivo","Arte","Música"], pop:89 },
+  { id:8, name:"Gris", icon:"🎨", genre:"aventura", trama:"lineal", combate:"sin_combate", visual:"anime", duracion:"corto", tags:["Arte","Emotivo","Sin combate","Indie"], pop:87 },
+  { id:9, name:"Control", icon:"🔮", genre:"aventura", trama:"lineal", combate:"accion", visual:"realista", duracion:"medio", tags:["Sobrenatural","Acción","Narrativa","Atmosférico"], pop:88 },
+  { id:10, name:"Disco Elysium", icon:"🕵️", genre:"aventura", trama:"ramificada", combate:"sin_combate", visual:"realista", duracion:"largo", tags:["RPG texto","Detective","Político","Único"], pop:93 },
+
+  // RPG
+  { id:11, name:"The Witcher 3", icon:"🐺", genre:"rpg", trama:"mundo_abierto", combate:"accion", visual:"realista", duracion:"largo", tags:["Mundo abierto","Historia épica","Madurez"], pop:99 },
+  { id:12, name:"Persona 5 Royal", icon:"🃏", genre:"rpg", trama:"lineal", combate:"por_turnos", visual:"anime", duracion:"largo", tags:["JRPG","Estilo","Social sim","Turnos"], pop:97 },
+  { id:13, name:"Dark Souls III", icon:"🔥", genre:"rpg", trama:"lineal", combate:"accion", visual:"realista", duracion:"medio", tags:["Difícil","Atmosférico","Lore profundo","FromSoftware"], pop:96 },
+  { id:14, name:"Baldur's Gate 3", icon:"🎭", genre:"rpg", trama:"ramificada", combate:"por_turnos", visual:"fotorrealista", duracion:"largo", tags:["D&D","Elecciones","Co-op","Épico"], pop:99 },
+  { id:15, name:"Final Fantasy XVI", icon:"⚡", genre:"rpg", trama:"lineal", combate:"accion", visual:"fotorrealista", duracion:"largo", tags:["JRPG","Acción","Épico","Cinematográfico"], pop:88 },
+  { id:16, name:"Elden Ring", icon:"👑", genre:"rpg", trama:"mundo_abierto", combate:"accion", visual:"realista", duracion:"largo", tags:["Mundo abierto","Difícil","Soulslike","FromSoftware"], pop:98 },
+  { id:17, name:"Dragon Age: Origins", icon:"🐉", genre:"rpg", trama:"ramificada", combate:"tactico", visual:"realista", duracion:"largo", tags:["Decisiones","Compañeros","Épico","Fantasy"], pop:90 },
+  { id:18, name:"Chrono Trigger", icon:"⏳", genre:"rpg", trama:"lineal", combate:"por_turnos", visual:"anime", duracion:"medio", tags:["Clásico","JRPG","Viaje temporal","Épico"], pop:97 },
+  { id:19, name:"Xenoblade Chronicles 3", icon:"🌅", genre:"rpg", trama:"lineal", combate:"tactico", visual:"anime", duracion:"largo", tags:["JRPG","Historia profunda","Arte","Música"], pop:91 },
+  { id:20, name:"Mass Effect 2", icon:"🚀", genre:"rpg", trama:"ramificada", combate:"tactico", visual:"realista", duracion:"largo", tags:["Sci-fi","Decisiones","Personajes","Épico"], pop:95 },
+
+  // PELEA
+  { id:21, name:"Street Fighter 6", icon:"🥊", genre:"pelea", trama:"narrativa_ligera", combate:"accion", visual:"anime", duracion:"largo", tags:["Fighting","Competitivo","Online","Clásico"], pop:92 },
+  { id:22, name:"Tekken 8", icon:"👊", genre:"pelea", trama:"lineal", combate:"accion", visual:"fotorrealista", duracion:"medio", tags:["3D Fighting","Historia","Online","Técnico"], pop:91 },
+  { id:23, name:"Mortal Kombat 1", icon:"💀", genre:"pelea", trama:"lineal", combate:"accion", visual:"fotorrealista", duracion:"medio", tags:["Gore","Historia","Brutalidades","Competitivo"], pop:87 },
+  { id:24, name:"Guilty Gear Strive", icon:"🎸", genre:"pelea", trama:"lineal", combate:"accion", visual:"anime", duracion:"medio", tags:["Anime","Rock","Arte visual","Técnico"], pop:89 },
+  { id:25, name:"Smash Bros Ultimate", icon:"🌟", genre:"pelea", trama:"narrativa_ligera", combate:"accion", visual:"anime", duracion:"largo", tags:["Party","Nintendo","Variedad","Casual/Hardcore"], pop:96 },
+
+  // ESTRATEGIA
+  { id:26, name:"Civilization VI", icon:"🏛️", genre:"estrategia", trama:"narrativa_ligera", combate:"por_turnos", visual:"lowpoly", duracion:"largo", tags:["4X","Historia","Construcción","Turno"], pop:93 },
+  { id:27, name:"XCOM 2", icon:"👽", genre:"estrategia", trama:"lineal", combate:"por_turnos", visual:"realista", duracion:"largo", tags:["Tactical","Permadeath","Sci-fi","Difícil"], pop:91 },
+  { id:28, name:"Into the Breach", icon:"🤖", genre:"estrategia", trama:"narrativa_ligera", combate:"por_turnos", visual:"lowpoly", duracion:"medio", tags:["Puzzle","Mechs","Indie","Roguelite"], pop:88 },
+  { id:29, name:"Starcraft II", icon:"🛸", genre:"estrategia", trama:"lineal", combate:"tactico", visual:"realista", duracion:"largo", tags:["RTS","Competitivo","Sci-fi","Velocidad"], pop:94 },
+  { id:30, name:"Fire Emblem: Three Houses", icon:"🏰", genre:"estrategia", trama:"ramificada", combate:"por_turnos", visual:"anime", duracion:"largo", tags:["JRPG táctico","Historia","Personajes","Decisiones"], pop:92 },
+  { id:31, name:"Hades", icon:"🌊", genre:"estrategia", trama:"ramificada", combate:"accion", visual:"anime", duracion:"medio", tags:["Roguelite","Mitología","Hack n Slash","Indie"], pop:97 },
+
+  // SIMULACIÓN
+  { id:32, name:"Stardew Valley", icon:"🌾", genre:"simulacion", trama:"narrativa_ligera", combate:"accion", visual:"anime", duracion:"largo", tags:["Granja","Relajante","Social","Indie"], pop:96 },
+  { id:33, name:"Cities: Skylines", icon:"🏙️", genre:"simulacion", trama:"narrativa_ligera", combate:"sin_combate", visual:"realista", duracion:"largo", tags:["Ciudad","Construcción","Gestión","Sandbox"], pop:91 },
+  { id:34, name:"Planet Zoo", icon:"🦁", genre:"simulacion", trama:"narrativa_ligera", combate:"sin_combate", visual:"fotorrealista", duracion:"largo", tags:["Zoológico","Animales","Gestión","Realismo"], pop:87 },
+  { id:35, name:"The Sims 4", icon:"🏠", genre:"simulacion", trama:"narrativa_ligera", combate:"sin_combate", visual:"realista", duracion:"largo", tags:["Vida","Casual","Creatividad","Social"], pop:85 },
+  { id:36, name:"Kerbal Space Program 2", icon:"🚀", genre:"simulacion", trama:"narrativa_ligera", combate:"sin_combate", visual:"realista", duracion:"largo", tags:["Espacial","Física real","Educativo","Difícil"], pop:82 },
+  { id:37, name:"Factorio", icon:"⚙️", genre:"simulacion", trama:"narrativa_ligera", combate:"accion", visual:"lowpoly", duracion:"largo", tags:["Automatización","Ingeniería","Adictivo","Complejo"], pop:90 },
+
+  // SHOOTER
+  { id:38, name:"Halo Infinite", icon:"🎮", genre:"shooter", trama:"lineal", combate:"accion", visual:"fotorrealista", duracion:"medio", tags:["FPS","Sci-fi","Multijugador","Épico"], pop:88 },
+  { id:39, name:"Doom Eternal", icon:"😈", genre:"shooter", trama:"lineal", combate:"accion", visual:"realista", duracion:"medio", tags:["FPS","Frenético","Metal","Difícil"], pop:92 },
+  { id:40, name:"Titanfall 2", icon:"🤖", genre:"shooter", trama:"lineal", combate:"accion", visual:"realista", duracion:"corto", tags:["FPS","Mechs","Campaña épica","Velocidad"], pop:93 },
+  { id:41, name:"BioShock Infinite", icon:"☁️", genre:"shooter", trama:"lineal", combate:"accion", visual:"realista", duracion:"medio", tags:["Narrativa","Filosófico","FPS","Atmósfera"], pop:94 },
+  { id:42, name:"Prey (2017)", icon:"🔬", genre:"shooter", trama:"mundo_abierto", combate:"tactico", visual:"realista", duracion:"medio", tags:["Immersive sim","Sci-fi","Exploración","Narrativa"], pop:89 },
+  { id:43, name:"Deep Rock Galactic", icon:"⛏️", genre:"shooter", trama:"narrativa_ligera", combate:"accion", visual:"lowpoly", duracion:"largo", tags:["Co-op","Enanos","Minería","Humor"], pop:93 },
+
+  // TERROR
+  { id:44, name:"Resident Evil 4 (2023)", icon:"🌿", genre:"terror", trama:"lineal", combate:"accion", visual:"fotorrealista", duracion:"medio", tags:["Survival Horror","Acción","Remake","Icónico"], pop:97 },
+  { id:45, name:"Alien: Isolation", icon:"👾", genre:"terror", trama:"lineal", combate:"tactico", visual:"realista", duracion:"medio", tags:["Stealth","Atmosférico","Sci-fi","Tensión"], pop:89 },
+  { id:46, name:"Amnesia: The Bunker", icon:"🕯️", genre:"terror", trama:"lineal", combate:"sin_combate", visual:"realista", duracion:"corto", tags:["Horror","Supervivencia","Oscuridad","WWII"], pop:85 },
+  { id:47, name:"SOMA", icon:"🔩", genre:"terror", trama:"lineal", combate:"sin_combate", visual:"realista", duracion:"medio", tags:["Sci-fi","Filosófico","Narrativa","Sin combate"], pop:88 },
+  { id:48, name:"Dead Space (2023)", icon:"🪐", genre:"terror", trama:"lineal", combate:"accion", visual:"fotorrealista", duracion:"medio", tags:["Survival Horror","Acción","Sci-fi","Remake"], pop:91 },
+  { id:49, name:"Signalis", icon:"🤖", genre:"terror", trama:"lineal", combate:"accion", visual:"anime", duracion:"corto", tags:["Pixel Art","Sci-fi","Survival Horror","Artístico"], pop:87 },
+
+  // EXTRAS para cubrir perfiles variados
+  { id:50, name:"Celeste", icon:"⛰️", genre:"aventura", trama:"lineal", combate:"sin_combate", visual:"anime", duracion:"medio", tags:["Plataformas","Difícil","Emotivo","Indie"], pop:95 },
+  { id:51, name:"Sekiro: Shadows Die Twice", icon:"🍃", genre:"rpg", trama:"lineal", combate:"accion", visual:"realista", duracion:"medio", tags:["Samuráis","Difícil","FromSoftware","Acción"], pop:94 },
+  { id:52, name:"Divinity: Original Sin 2", icon:"🧙", genre:"rpg", trama:"ramificada", combate:"por_turnos", visual:"realista", duracion:"largo", tags:["Turnos","Co-op","Historia profunda","RPG táctico"], pop:95 },
+];
+
+// ═══════════════════════════════════════════════
+//  OUTPUT CATEGORIES CONFIG
+// ═══════════════════════════════════════════════
+const OUT_CATEGORIES = [
+  { id:"perfect",   label:"Perfectos para ti",          icon:"⭐", color:"#7c6dfa", accent:"rgba(124,109,250,0.12)", border:"rgba(124,109,250,0.3)" },
+  { id:"similar",   label:"Parecidos a tus favoritos",  icon:"💜", color:"#a78bfa", accent:"rgba(167,139,250,0.1)",  border:"rgba(167,139,250,0.25)" },
+  { id:"hidden",    label:"Joyas ocultas",               icon:"💎", color:"#14b8a6", accent:"rgba(20,184,166,0.1)",  border:"rgba(20,184,166,0.25)" },
+  { id:"new",       label:"Si quieres algo nuevo",       icon:"🚀", color:"#f97316", accent:"rgba(249,115,22,0.08)", border:"rgba(249,115,22,0.25)" },
+  { id:"popular",   label:"Los más populares de tu perfil", icon:"🔥", color:"#ec4899", accent:"rgba(236,72,153,0.08)", border:"rgba(236,72,153,0.25)" },
+];
+
+// ═══════════════════════════════════════════════
+//  STATE
+// ═══════════════════════════════════════════════
+let currentStep = 1;
+const totalSteps = 5;
+const selections = {};
+
+const STEP_KEYS = {1:"genre", 2:"trama", 3:"combate", 4:"visual", 5:"duracion"};
+const GAME_FIELDS = {1:"genre", 2:"trama", 3:"combate", 4:"visual", 5:"duracion"};
+
+// ═══════════════════════════════════════════════
+//  FORM LOGIC
+// ═══════════════════════════════════════════════
+function selectOption(btn) {
+  const step = btn.dataset.step;
+  document.querySelectorAll(`.option-btn[data-step="${step}"]`).forEach(b => b.classList.remove('selected'));
+  btn.classList.add('selected');
+  const key = STEP_KEYS[parseInt(step)];
+  selections[key] = btn.dataset.value;
+  document.getElementById(`val-${step}`).style.display = 'none';
+}
+
+function nextStep(step) {
+  const key = STEP_KEYS[step];
+  if (!selections[key]) {
+    document.getElementById(`val-${step}`).style.display = 'block';
+    return;
+  }
+  if (step < totalSteps) {
+    showStep(step + 1);
+  }
+}
+
+function prevStep(step) {
+  showStep(step - 1);
+}
+
+function showStep(n) {
+  document.querySelectorAll('.form-section').forEach(s => s.classList.remove('active'));
+  document.getElementById(`step-${n}`).classList.add('active');
+  currentStep = n;
+  updateProgress();
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function updateProgress() {
+  const pct = (currentStep / totalSteps) * 100;
+  document.getElementById('progress-fill').style.width = pct + '%';
+  document.getElementById('progress-label').textContent = `Paso ${currentStep} de ${totalSteps}`;
+
+  for (let i = 1; i <= totalSteps; i++) {
+    const dot = document.getElementById(`dot-${i}`);
+    dot.classList.remove('active','done');
+    if (i < currentStep) dot.classList.add('done');
+    else if (i === currentStep) dot.classList.add('active');
+    if (i < totalSteps) {
+      const line = document.getElementById(`line-${i}`);
+      line.classList.toggle('done', i < currentStep);
+    }
+  }
+}
+
+// ═══════════════════════════════════════════════
+//  RECOMMENDATION ENGINE
+//  Función de utilidad: f(s, a) = Σ wᵢ · match(sᵢ, aᵢ)
+//  donde s = preferencias del usuario, a = juego candidato
+//  a* = argmax f(s, a) sobre todos los juegos en GAMES_DB
+// ═══════════════════════════════════════════════
+const SCORE_WEIGHTS = {
+  genre:    25,  // Género principal  — mayor peso, define el tipo de experiencia
+  trama:    20,  // Tipo de trama     — estructura narrativa
+  combate:  20,  // Sistema de combate — mecánica central
+  visual:   18,  // Estilo visual     — dirección artística
+  duracion: 17,  // Duración          — compromiso de tiempo
+};
+// Total máximo posible: 100 puntos
+
+// Penalización por feedback negativo del usuario (aprendizaje por retroalimentación)
+const dislikedGames = new Set();
+
+function scoreGame(game, prefs) {
+  let score = 0;
+  if (game.genre    === prefs.genre)    score += SCORE_WEIGHTS.genre;
+  if (game.trama    === prefs.trama)    score += SCORE_WEIGHTS.trama;
+  if (game.combate  === prefs.combate)  score += SCORE_WEIGHTS.combate;
+  if (game.visual   === prefs.visual)   score += SCORE_WEIGHTS.visual;
+  if (game.duracion === prefs.duracion) score += SCORE_WEIGHTS.duracion;
+  // Penalización si el usuario marcó el juego como "no me interesa"
+  if (dislikedGames.has(game.id)) score = Math.max(0, score - 40);
+  return score;
+}
+
+function generateReason(game, prefs, category) {
+  const reasons = {
+    perfect: [
+      `Coincide perfectamente con tu amor por el ${prefs.genre} con ${prefs.combate === 'accion' ? 'combate frenético' : prefs.combate === 'por_turnos' ? 'sistema por turnos' : 'exploración sin combate'}.`,
+      `Tu perfil de jugador encaja al 100% — ${prefs.visual} visual, ${prefs.duracion === 'largo' ? 'experiencia larga' : prefs.duracion === 'medio' ? 'duración ideal' : 'partida corta e intensa'}.`,
+      `Es exactamente lo que buscas: ${prefs.genre} con trama ${prefs.trama === 'mundo_abierto' ? 'de mundo abierto' : prefs.trama}.`,
+    ],
+    similar: [
+      `Comparte el ADN de tus géneros favoritos con un giro que te sorprenderá.`,
+      `Mismo espíritu de ${prefs.genre}, pero con mecánicas únicas que ampliarán tus horizontes.`,
+      `Si te gusta ${prefs.genre}, este título tiene todo lo que necesitas con algo extra especial.`,
+    ],
+    hidden: [
+      `Joyas así se encuentran pocas — low profile pero calidad de culto que pocos conocen.`,
+      `El boca a boca lo mantiene vivo entre los jugadores más exigentes. No dejes pasar esta joya.`,
+      `InfraValorado por el mercado, sobrevalorado por quienes lo jugaron. Esta es tu señal.`,
+    ],
+    new: [
+      `Sale de tu zona de confort pero mantiene el espíritu del ${prefs.genre}. El riesgo vale la pena.`,
+      `Diferente a lo que buscas, pero los jugadores de ${prefs.genre} suelen adorar este estilo.`,
+      `Perfecta para expandir tu paleta — lo que parece distinto termina siendo fascinante.`,
+    ],
+    popular: [
+      `Uno de los más alabados entre los fans de ${prefs.genre}. La comunidad dice que no falla.`,
+      `Con ${game.pop}% de aprobación, es de los más queridos para perfiles como el tuyo.`,
+      `La crítica y los fans coinciden: si juegas ${prefs.genre}, este es obligatorio.`,
+    ],
+  };
+  const pool = reasons[category];
+  return pool[game.id % pool.length];
+}
+
+function getMatchLabel(score) {
+  if (score >= 95) return { label: '★ Match Perfecto', cls: 'match-perfect' };
+  if (score >= 75) return { label: '◆ Match Alto', cls: 'match-high' };
+  if (score >= 50) return { label: '● Match Medio', cls: 'match-medium' };
+  return { label: '○ Match Parcial', cls: 'match-low' };
+}
+
+function buildRecommendations(prefs) {
+  // Score all games
+  const scored = GAMES_DB.map(g => ({
+    ...g,
+    score: scoreGame(g, prefs)
+  })).sort((a, b) => b.score - a.score || b.pop - a.pop);
+
+  const perfect  = scored.filter(g => g.score >= 95).slice(0, 8);
+  const similar  = scored.filter(g => g.score >= 60 && g.score < 95).slice(0, 8);
+  const hidden   = scored.filter(g => g.pop < 90).sort((a,b) => b.score - a.score).slice(0, 7);
+  const newOnes  = scored.filter(g => g.genre !== prefs.genre).slice(0, 7);
+  const popular  = [...scored].sort((a,b) => b.pop - a.pop).slice(0, 8);
+
+  // Deduplicate across categories ensuring minimum 30 total
+  const seen = new Set();
+  const dedup = (list) => list.filter(g => {
+    if (seen.has(g.id)) return false;
+    seen.add(g.id);
+    return true;
+  });
+
+  let cats = [
+    { ...OUT_CATEGORIES[0], games: dedup(perfect) },
+    { ...OUT_CATEGORIES[1], games: dedup(similar) },
+    { ...OUT_CATEGORIES[2], games: dedup(hidden) },
+    { ...OUT_CATEGORIES[3], games: dedup(newOnes) },
+    { ...OUT_CATEGORIES[4], games: dedup(popular) },
+  ];
+
+  // Ensure minimum 30 total — fill from scored remainder
+  const totalGames = cats.reduce((sum, c) => sum + c.games.length, 0);
+  if (totalGames < 30) {
+    const remaining = scored.filter(g => !seen.has(g.id));
+    const needed = 30 - totalGames;
+    remaining.slice(0, needed).forEach(g => {
+      cats[4].games.push(g);
+      seen.add(g.id);
+    });
+  }
+
+  // Add reasons
+  cats.forEach(cat => {
+    cat.games = cat.games.map(g => ({
+      ...g,
+      reason: generateReason(g, prefs, cat.id),
+      matchScore: g.score,
+      matchLabel: getMatchLabel(g.score),
+    }));
+  });
+
+  return cats;
+}
+
+// ═══════════════════════════════════════════════
+//  MAIN ACTION
+// ═══════════════════════════════════════════════
+async function getRecommendations() {
+  const key = STEP_KEYS[5];
+  if (!selections[key]) {
+    document.getElementById('val-5').style.display = 'block';
+    return;
+  }
+
+  // Map selections to game fields
+  const prefs = {
+    genre:   selections.genre,
+    trama:   selections.trama,
+    combate: selections.combate,
+    visual:  selections.visual,
+    duracion: selections.duracion,
+  };
+
+  // Show loading
+  document.getElementById('form-section').style.display = 'none';
+  document.getElementById('loading').style.display = 'block';
+
+  await new Promise(r => setTimeout(r, 2200)); // simulate analysis
+
+  lastPrefs = prefs;
+  const cats = buildRecommendations(prefs);
+  renderResults(prefs, cats);
+}
+
+// ═══════════════════════════════════════════════
+//  RENDER RESULTS
+// ═══════════════════════════════════════════════
+const LABEL_MAP = {
+  genre:    { aventura:'Aventura', rpg:'RPG', pelea:'Pelea', estrategia:'Estrategia', simulacion:'Simulación', shooter:'Shooter', terror:'Terror' },
+  trama:    { lineal:'Trama lineal', ramificada:'Trama ramificada', mundo_abierto:'Mundo abierto', narrativa_ligera:'Narrativa ligera' },
+  combate:  { por_turnos:'Combate por turnos', tactico:'Táctico', accion:'Acción frenética', sin_combate:'Sin combate' },
+  visual:   { realista:'Realista', anime:'Anime/Pixel Art', lowpoly:'Low-poly', fotorrealista:'Fotorrealista' },
+  duracion: { corto:'<10h (Corto)', medio:'10–30h (Medio)', largo:'>30h (Largo)' },
+};
+
+const PREF_ICONS = { genre:'🎮', trama:'📖', combate:'⚔️', visual:'🎨', duracion:'⏱️' };
+
+let activeTabId = null;
+let currentCats = [];
+
+function renderResults(prefs, cats) {
+  currentCats = cats;
+  document.getElementById('loading').style.display = 'none';
+  const resultsEl = document.getElementById('results');
+  resultsEl.style.display = 'block';
+
+  // Profile chips
+  const chipsEl = document.getElementById('profile-chips');
+  chipsEl.innerHTML = Object.entries(prefs).map(([k,v]) =>
+    `<div class="chip"><span class="chip-icon">${PREF_ICONS[k]}</span>${LABEL_MAP[k][v]}</div>`
+  ).join('');
+
+  // Summary
+  const totalGames = cats.reduce((s, c) => s + c.games.length, 0);
+  const perfectCount = cats[0].games.length;
+  const maxPop = Math.max(...cats.flatMap(c => c.games.map(g => g.pop)));
+  document.getElementById('summary-bar').innerHTML = `
+    <div class="stat-item"><div class="stat-num">${totalGames}</div><div class="stat-label">Juegos encontrados</div></div>
+    <div class="stat-item"><div class="stat-num">${perfectCount}</div><div class="stat-label">Perfectos para ti</div></div>
+    <div class="stat-item"><div class="stat-num">5</div><div class="stat-label">Categorías únicas</div></div>
+    <div class="stat-item"><div class="stat-num">${maxPop}%</div><div class="stat-label">Mejor puntuación</div></div>
+  `;
+
+  // Tabs
+  const tabsEl = document.getElementById('category-tabs');
+  tabsEl.innerHTML = cats.map((cat, i) => `
+    <button class="tab-btn ${i===0?'active':''}" id="tab-${cat.id}"
+      onclick="switchTab('${cat.id}')"
+      style="${i===0?`background:${cat.color};border-color:${cat.color};`:''}">
+      ${cat.icon} ${cat.label}
+      <span class="count">${cat.games.length}</span>
+    </button>
+  `).join('');
+
+  activeTabId = cats[0].id;
+  renderGames(cats[0]);
+
+  // Show feedback notice if user has discarded games
+  const notice = document.getElementById('feedback-notice');
+  if (notice) notice.classList.toggle('visible', dislikedGames.size > 0);
+
+  resultsEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function switchTab(catId) {
+  const cat = currentCats.find(c => c.id === catId);
+  if (!cat) return;
+
+  document.querySelectorAll('.tab-btn').forEach(b => {
+    b.classList.remove('active');
+    b.style.background = '';
+    b.style.borderColor = '';
+  });
+  const activeBtn = document.getElementById(`tab-${catId}`);
+  activeBtn.classList.add('active');
+  activeBtn.style.background = cat.color;
+  activeBtn.style.borderColor = cat.color;
+
+  activeTabId = catId;
+  renderGames(cat);
+}
+
+function renderGames(cat) {
+  const container = document.getElementById('games-container');
+  if (cat.games.length === 0) {
+    container.innerHTML = `<div style="text-align:center;padding:60px;color:var(--text3)">No hay juegos en esta categoría para tu perfil exacto.</div>`;
+    return;
+  }
+
+  container.innerHTML = `<div class="games-grid">${cat.games.map((g, i) => `
+    <div class="game-card ${dislikedGames.has(g.id) ? 'game-disliked' : ''}" id="card-${g.id}" style="animation-delay:${i*0.05}s;border-color:${cat.border};">
+      <div class="match-badge ${g.matchLabel.cls}">${g.matchLabel.label}</div>
+      <div class="game-top">
+        <div class="game-icon" style="background:${cat.accent}">${g.icon}</div>
+        <div class="game-meta">
+          <div class="game-name" title="${g.name}">${g.name}</div>
+          <div class="game-tags">
+            ${g.tags.slice(0,3).map(t => `<span class="tag">${t}</span>`).join('')}
+          </div>
+        </div>
+        <div class="game-score">${g.matchScore}<span style="font-size:10px;color:var(--text3)">/100</span></div>
+      </div>
+      <div class="game-reason">${g.reason}</div>
+      <div class="game-feedback">
+        <button class="feedback-btn ${dislikedGames.has(g.id) ? 'feedback-active' : ''}"
+          onclick="toggleDislike(${g.id})"
+          title="No me interesa este juego — el agente lo penalizará">
+          ${dislikedGames.has(g.id) ? '✗ Descartado' : '✕ No me interesa'}
+        </button>
+      </div>
+    </div>
+  `).join('')}</div>`;
+}
+
+// ═══════════════════════════════════════════════
+//  FEEDBACK — El agente aprende de rechazos
+// ═══════════════════════════════════════════════
+let lastPrefs = null;
+
+function toggleDislike(gameId) {
+  if (dislikedGames.has(gameId)) {
+    dislikedGames.delete(gameId);
+  } else {
+    dislikedGames.add(gameId);
+  }
+  // Recalculate con el mismo estado s — el agente responde al nuevo entorno
+  if (lastPrefs) {
+    const newCats = buildRecommendations(lastPrefs);
+    renderResults(lastPrefs, newCats);
+    // Restore scroll position
+    document.getElementById('results').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+}
+
+// ═══════════════════════════════════════════════
+//  RESET
+// ═══════════════════════════════════════════════
+function resetForm() {
+  Object.keys(selections).forEach(k => delete selections[k]);
+  dislikedGames.clear();
+  lastPrefs = null;
+  document.querySelectorAll('.option-btn').forEach(b => b.classList.remove('selected'));
+  document.querySelectorAll('.validation-msg').forEach(m => m.style.display='none');
+
+  document.getElementById('results').style.display = 'none';
+  document.getElementById('loading').style.display = 'none';
+  document.getElementById('form-section').style.display = 'block';
+
+  showStep(1);
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+</script>
+</body>
+</html>
